@@ -26,7 +26,7 @@ Option getOption() {
 	return static_cast<Option>(choice);
 }
 
-void list_files(const fs::path& directory) {
+void listFiles(const fs::path& directory) {
 	try {
 		if (fs::exists(directory)) {
 			if (fs::is_regular_file(directory)) {
@@ -48,74 +48,70 @@ void list_files(const fs::path& directory) {
 	}
 }
 
+void copyFile(const fs::path& sourcePath, const fs::path& destinationPath) {
+	fs::copy_file(sourcePath, destinationPath, fs::copy_options::overwrite_existing);
+	std::cout << "File copied successfully." << std::endl;
+}
+
+void moveFile(const fs::path& sourcePath, const fs::path& destinationPath) {
+	fs::rename(sourcePath, destinationPath);
+	std::cout << "File moved successfully." << std::endl;
+}
+
+void deleteFile(const fs::path& filePath) {
+	if (fs::exists(filePath)) {
+		fs::remove(filePath);
+		std::cout << "File deleted: " << filePath.filename() << std::endl;
+	}
+	else {
+		std::cout << "File not found: " << filePath.filename() << std::endl;
+	}
+}
+
 int main() {
-	std::string path_str{};
+	std::string pathStr{};
 	for (;;) {
 		std::cout << "Enter directory path: ";
-		std::getline(std::cin, path_str);
-		fs::path current_path{ path_str };
-		list_files(current_path);
+		std::getline(std::cin, pathStr);
+		fs::path currentPath{ pathStr };
+		listFiles(currentPath);
+
 		Option option = getOption();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (option == Option::COPY) {
-			std::cout << "Enter source file name: ";
-			std::string source_file;
-			std::getline(std::cin, source_file);
 
-			fs::path source_path = current_path / source_file;
-
-			if (!fs::exists(source_path) || !fs::is_regular_file(source_path)) {
-				std::cerr << "File not found or is not a regular file: " << source_path.filename() << std::endl;
-				continue;
-			}
-
-			std::cout << "Enter destination directory: ";
-			std::string destination_dir;
-			std::getline(std::cin, destination_dir);
-
-			fs::path destination_path = fs::absolute(fs::path(destination_dir)) / source_file;
-			fs::copy_file(source_path, destination_path, fs::copy_options::overwrite_existing);
-			std::cout << "File copied successfully." << std::endl;
-		}
-		else if (option == Option::MOVE) {
-			std::cout << "Enter source file name: ";
-			std::string source_file;
-			std::getline(std::cin, source_file);
-
-			fs::path source_path = current_path / source_file;
-
-			if (!fs::exists(source_path) || !fs::is_regular_file(source_path)) {
-				std::cerr << "File not found or is not a regular file: " << source_path.filename() << std::endl;
-				continue;
-			}
-
-			std::cout << "Enter destination directory: ";
-			std::string destination_dir;
-			std::getline(std::cin, destination_dir);
-
-			fs::path destination_path = fs::absolute(fs::path(destination_dir)) / source_file;
-			fs::rename(source_path, destination_path);
-			std::cout << "File moved successfully." << std::endl;
-		}
-		else if (option == Option::DELETE) {
-			std::cout << "Enter file name to delete: ";
-			std::string file_name;
-			std::getline(std::cin, file_name);
-
-			fs::path file_path = current_path / file_name;
-
-			if (fs::exists(file_path)) {
-				fs::remove(file_path);
-				std::cout << "File deleted: " << file_path.filename() << std::endl;
-			}
-			else {
-				std::cout << "File not found: " << file_path.filename() << std::endl;
-			}
-		}
-		else if (option == Option::QUIT) {
+		if (option == Option::QUIT) {
 			return 0;
 		}
-		else {
+
+		std::cout << "Enter file name: ";
+		std::string fileName{};
+		std::getline(std::cin, fileName);
+
+		fs::path sourcePath = currentPath / fileName;
+
+		if (!fs::exists(sourcePath) || !fs::is_regular_file(sourcePath)) {
+			std::cerr << "File not found or is not a regular file: " << sourcePath.filename() << std::endl;
+			continue;
+		}
+
+		std::string destinationDir{};
+		if (option == Option::COPY || option == Option::MOVE) {
+			std::cout << "Enter destination directory: ";
+			std::getline(std::cin, destinationDir);
+		}
+		fs::path destinationPath = fs::absolute(fs::path(destinationDir)) / fileName;
+
+		switch (option) {
+		case Option::COPY:
+			copyFile(sourcePath, destinationPath);
+			break;
+		case Option::MOVE:
+			moveFile(sourcePath, destinationPath);
+			break;
+		case Option::DELETE:
+			deleteFile(sourcePath);
+			break;
+		default:
 			std::cerr << "Invalid choice. Try again." << std::endl;
 			break;
 		}
